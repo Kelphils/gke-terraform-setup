@@ -1,0 +1,86 @@
+name: Dev Deployment Pipeline
+
+env:
+  IMAGE_TAG: "europe-west4-docker.pkg.dev/plucky-cargo-359113/plucky-cargo-359113-animal-farm-repo"
+  environment_name: "dev"
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+  workflow_dispatch: # Run manually
+
+permissions:
+  id-token: "write"
+  contents: "read"
+
+jobs:
+  #----------------------------------------------
+  # -----  Unit Test  -----
+  #----------------------------------------------
+  application-test:
+    name: 'Application Unit Test'
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Unit Actions
+        uses: ./.github/actions/test
+
+  #----------------------------------------------
+  # -----  Docker Actions  -----
+  #----------------------------------------------
+  docker-actions:
+    name: 'Docker Build, Tag and Push'
+    runs-on: ubuntu-latest
+    needs: application-test
+    steps:
+      -
+        name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Docker Actions
+        id: docker-actions
+        uses: ./.github/actions/docker-actions
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.IMAGE_TAG }}:latest
+
+  #----------------------------------------------
+  # -----  Plan Terraform  -----
+  #----------------------------------------------
+  tf_plan:
+    name: 'Terraform Plan'
+    runs-on: ubuntu-latest
+    needs: docker-actions
+    steps:
+      -
+        name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Terraform Plan
+        id: tf_plan
+        uses: ./.github/actions/terraform-action
+        with:
+          environment_name: ${{ env.environment_name }}
+          google_credentials: ${{ secrets.GOOGLE_CREDENTIALS }}
+  #----------------------------------------------
+  # -----  Apply Terraform  -----
+  #----------------------------------------------
+  tf_apply:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+    needs: tf_plan
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Terraform Apply
+        id: apply_dev
+        uses: ./.github/actions/terraform-action
+        with:
+          environment_name: ${{ env.environment_name }}
+          google_credentials: ${{ secrets.GOOGLE_CREDENTIALS }}
+

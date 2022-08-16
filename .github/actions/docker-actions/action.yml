@@ -1,0 +1,85 @@
+#.github/actions/docker-action/action.yml
+name: Publish Docker image
+description: Publishing docker images to artifact registry
+
+inputs:
+  gcp_project_id:
+    description: "Gcp Project being targeted."
+    default: "plucky-cargo-359113"
+    required: true
+  google_credentials:
+    description: "...."
+    required: true
+  dockerfile:
+    description: "Dockerfile to use for the image"
+    default: "./Dockerfile"
+    required: true
+  image_tag:
+    description: "Tag of the image to build"
+    default: "europe-west4-docker.pkg.dev/plucky-cargo-359113/plucky-cargo-359113-animal-farm-repo"
+    required: true
+  hostname_registry:
+    description: "Gcp Artifact Registry"
+    default: "europe-west4-docker.pkg.dev"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+      -
+        name: Set up QEMU
+        id: qemu-setup
+        uses: docker/setup-qemu-action@v1
+
+    #----------------------------------------------
+    # -----  Build Docker Image  -----
+    #----------------------------------------------
+      -
+        name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Build Docker Image
+        id: docker-build
+        uses: docker/build-push-action@v2
+        # with:
+        #   context: ${{ inputs.context }}
+        #   builder: ${{ steps.buildx.outputs.name }}
+        #   file: ${{ inputs.dockerfile }}
+        #   tags: ${{ inputs.image_name }}:${{ inputs.image_tag }}
+
+    #----------------------------------------------
+    # -----  Login to  GCP  -----
+    #----------------------------------------------
+      -
+        id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0.4.0'
+        with:
+          credentials_json: '${{ inputs.google_credentials}}'
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+        with:
+          project_id: '${{ inputs.gcp_project_id }}'
+
+      -
+        name: Authenticate with GCP
+        run: |
+          gcloud auth configure-docker ${{ inputs.hostname_registry }}
+        shell: bash
+
+      -
+        name: Build and push image to Artifact Registry
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ inputs.image_tag }}:latest
+
+
+      

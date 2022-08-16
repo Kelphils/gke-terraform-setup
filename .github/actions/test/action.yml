@@ -1,19 +1,9 @@
 name: Animal Farm Node.js CI
+description: Running unit test for application
 
-on:
-  push:
-   branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
+runs:
+  using: "composite"
+  steps:
     - name: Checkout repository
       uses: actions/checkout@v2
     - name: Use Node.js
@@ -22,5 +12,7 @@ jobs:
         node-version: '18.x'
     - name: Run Yarn
       run: yarn
+      shell: bash
     - name: Run tests
       run: yarn test
+      shell: bash

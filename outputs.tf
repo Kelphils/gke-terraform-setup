@@ -22,10 +22,10 @@ output "project_id" {
   description = "Gcp project id"
 }
 
-output "repostory_name" {
-  value       = module.gcr.google_artifact_registry_repository_name
-  description = "Gcr repository name"
-}
+# output "repostory_name" {
+#   value       = module.gcr.google_artifact_registry_repository_name
+#   description = "Gcr repository name"
+# }
 
 output "loadbalancer_ip" {
   value       = module.k8s-config.load-balancer-ip

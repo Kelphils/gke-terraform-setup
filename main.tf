@@ -19,12 +19,12 @@ module "gke" {
   services_secondary_range_name = module.vpc.services_secondary_range_name
 }
 
-module "gcr" {
-  source      = "./modules/gcr"
-  env_name    = var.env_name
-  gcp_project = var.gcp_project
-  gcp_region  = var.gcp_region
-}
+# module "gcr" {
+#   source      = "./modules/gcr"
+#   env_name    = var.env_name
+#   gcp_project = var.gcp_project
+#   gcp_region  = var.gcp_region
+# }
 
 module "k8s-config" {
   source             = "./modules/kubernetes-config"
