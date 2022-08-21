@@ -16,7 +16,10 @@ inputs:
     required: true
   image_tag:
     description: "Tag of the image to build"
-    default: "europe-west4-docker.pkg.dev/plucky-cargo-359113/plucky-cargo-359113-animal-farm-repo"
+    required: true
+  image_name:
+    description: "Tagged image to be pushed"
+    default: "europe-west4-docker.pkg.dev/plucky-cargo-359113/plucky-cargo-359113-animal-farm-repo/devops"
     required: true
   hostname_registry:
     description: "Gcp Artifact Registry"
@@ -41,10 +44,9 @@ runs:
         name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
-      -
-        name: Build Docker Image
-        id: docker-build
-        uses: docker/build-push-action@v2
+        with:
+          driver: docker
+
         # with:
         #   context: ${{ inputs.context }}
         #   builder: ${{ steps.buildx.outputs.name }}
@@ -59,12 +61,12 @@ runs:
         name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v0.4.0'
         with:
-          credentials_json: '${{ inputs.google_credentials}}'
+          credentials_json: ${{ inputs.google_credentials }}
 
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v0'
         with:
-          project_id: '${{ inputs.gcp_project_id }}'
+          project_id: ${{ inputs.gcp_project_id }}
 
       -
         name: Authenticate with GCP
@@ -73,13 +75,25 @@ runs:
         shell: bash
 
       -
-        name: Build and push image to Artifact Registry
+        name: Build Docker Image
+        id: docker-build
         uses: docker/build-push-action@v2
         with:
           context: .
           file: ./Dockerfile
-          push: true
-          tags: ${{ inputs.image_tag }}:latest
+          builder: ${{ steps.buildx.outputs.name }}
+          tags: ${{ inputs.image_name }}:${{ inputs.image_tag }}
 
+      - 
+        name: Docker images locally
+        id: docker-ls
+        run: docker images
+        shell: bash
+
+      - 
+        name: push image to Artifact Registry
+        id: docker-push
+        run: docker push ${{ inputs.image_name }}:${{ inputs.image_tag }}
+        shell: bash
 
       

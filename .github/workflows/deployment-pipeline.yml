@@ -1,7 +1,6 @@
 name: Dev Deployment Pipeline
 
 env:
-  IMAGE_TAG: "europe-west4-docker.pkg.dev/plucky-cargo-359113/plucky-cargo-359113-animal-farm-repo"
   environment_name: "dev"
 
 on:
@@ -41,14 +40,18 @@ jobs:
       -
         name: Checkout repo
         uses: actions/checkout@v3
+      - name: Get SHA for image tag
+        id: get-sha
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
       - name: Docker Actions
         id: docker-actions
         uses: ./.github/actions/docker-actions
         with:
-          context: .
-          file: ./Dockerfile
+          dockerfile: ./Dockerfile
           push: true
-          tags: ${{ env.IMAGE_TAG }}:latest
+          image_tag: ${{ steps.get-sha.outputs.sha_short }}
+          google_credentials: ${{ secrets.GOOGLE_CREDENTIALS }}
+          
 
   #----------------------------------------------
   # -----  Plan Terraform  -----
