@@ -2,6 +2,15 @@
 name: 'Terraform CI'
 description: Terraform to create infrastructure
 
+inputs:
+  gcp_project_id:
+    description: "Gcp Project being targeted."
+    default: "plucky-cargo-359113"
+    required: true
+  google_credentials:
+    description: "...."
+    required: true
+  
 runs:
   using: "composite"
   steps:
@@ -9,6 +18,18 @@ runs:
       -
         name: Checkout
         uses: actions/checkout@v2
+
+      -
+        id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v0.4.0'
+        with:
+          credentials_json: ${{ inputs.google_credentials }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v0'
+        with:
+          project_id: ${{ inputs.gcp_project_id }}
 
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
       - name: Setup Terraform

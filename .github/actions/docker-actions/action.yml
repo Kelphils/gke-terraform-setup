@@ -85,12 +85,6 @@ runs:
           tags: ${{ inputs.image_name }}:${{ inputs.image_tag }}
 
       - 
-        name: Docker images locally
-        id: docker-ls
-        run: docker images
-        shell: bash
-
-      - 
         name: push image to Artifact Registry
         id: docker-push
         run: docker push ${{ inputs.image_name }}:${{ inputs.image_tag }}
